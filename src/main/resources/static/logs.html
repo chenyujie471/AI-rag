@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>使用日志 · AI 知识库助手</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute('data-theme',
+                    localStorage.getItem('airag_theme') === 'dark' ? 'dark' : 'light');
+            } catch (e) { /* 隐私模式 */ }
+        })();
+    </script>
+    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    <link rel="stylesheet" href="/assets/console.css">
+</head>
+<body class="console" data-page="logs">
+<header id="app-top"></header>
+<aside id="app-side"></aside>
+<script src="/assets/layout.js"></script>
+
+<main class="app-main">
+    <section class="panel">
+        <div class="panel-head">
+            <div class="panel-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-scroll-text"></use></svg>
+                <span>使用日志</span>
+                <small>仅显示你自己的调用记录</small>
+            </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <form class="filters" id="filter-form" autocomplete="off">
+            <label class="f-item f-range">
+                <input type="datetime-local" id="f-start" step="1" aria-label="开始时间">
+                <span class="f-sep">~</span>
+                <input type="datetime-local" id="f-end" step="1" aria-label="结束时间">
+            </label>
+            <label class="f-item f-search">
+                <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                <input type="search" id="f-keyword" placeholder="搜索问题或回答" maxlength="100">
+            </label>
+            <select class="f-item f-select" id="f-type" aria-label="类型">
+                <option value="">全部类型</option>
+                <option value="faq">AI 知识问答</option>
+                <option value="after-sale">售后知识问答</option>
+            </select>
+            <select class="f-item f-select" id="f-status" aria-label="状态">
+                <option value="">全部状态</option>
+                <option value="SUCCESS">成功</option>
+                <option value="FAILED">失败</option>
+                <option value="REJECTED">已拦截</option>
+            </select>
+            <div class="f-actions">
+                <button class="btn btn-primary btn-sm" type="submit">
+                    <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>查询
+                </button>
+                <button class="btn btn-ghost btn-sm" type="button" id="f-reset">
+                    <svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"></use></svg>重置
+                </button>
+            </div>
+        </form>
+
+        <!-- 汇总条 -->
+        <div class="summary" id="summary" aria-live="polite"></div>
+
+        <!-- 表格 -->
+        <div class="table-wrap">
+            <table class="log-table">
+                <thead>
+                <tr>
+                    <th class="c-time">时间</th>
+                    <th class="c-type">类型</th>
+                    <th class="c-q">问题</th>
+                    <th class="c-a">回答</th>
+                    <th class="c-status">状态</th>
+                    <th class="c-dur">耗时</th>
+                    <th class="c-cost">扣次</th>
+                </tr>
+                </thead>
+                <tbody id="log-body"></tbody>
+            </table>
+        </div>
+
+        <div class="pager" id="pager"></div>
+    </section>
+</main>
+
+<!-- 详情抽屉 -->
+<aside class="detail" id="detail" aria-label="调用详情" hidden>
+    <div class="detail-head">
+        <strong>调用详情</strong>
+        <button class="icon-btn" id="detail-close" type="button" aria-label="关闭">
+            <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+        </button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+</aside>
+<div class="detail-mask" id="detail-mask" hidden></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/vendor/marked.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/assets/theme.js"></script>
+<script src="/assets/logs.js"></script>
+</body>
+</html>

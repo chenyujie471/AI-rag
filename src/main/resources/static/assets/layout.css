@@ -1,0 +1,380 @@
+/* ==========================================================================
+   layout.css —— 控制台骨架:顶栏 + 左侧导航 + 主内容区
+   四个页面共用(faq / after-sale / logs / profile),结构由 layout.js 注入
+   ========================================================================== */
+
+:root {
+    --top-h: 56px;
+    --side-w: 208px;
+}
+
+.console {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+/* ------------------------------------------------------------- 顶栏 -- */
+
+.app-top {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 30;
+    height: var(--top-h);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.app-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: .01em;
+}
+
+.app-brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+}
+
+.brand-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 6px rgba(29, 143, 224, .28));
+}
+
+.app-top-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-top .theme-toggle,
+.app-top .icon-btn {
+    width: 34px;
+    height: 34px;
+}
+
+/* 顶栏入口:目前只有"管理后台"(带 data-admin-only,默认 hidden)。
+   "使用日志"只在左侧导航里留一个入口,顶栏不重复放。 */
+.top-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 13px;
+    white-space: nowrap;
+    transition: color .16s, border-color .16s, background-color .16s;
+}
+
+.top-link:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.top-link .icon {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+}
+
+.top-link:hover .icon {
+    color: var(--primary);
+}
+
+.user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 12px 3px 3px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 13px;
+    transition: border-color .15s, background .15s;
+}
+.user-chip:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.user-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #60a5fa, #14b8a6);
+}
+
+.user-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.side-toggle {
+    display: none !important;
+}
+
+/* ------------------------------------------------------------- 左侧导航 -- */
+
+.app-side {
+    position: fixed;
+    top: var(--top-h);
+    bottom: 0;
+    left: 0;
+    z-index: 25;
+    width: var(--side-w);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+.side-nav {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 10px 10px 16px;
+}
+
+.side-group {
+    padding: 14px 10px 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.side-group:first-child {
+    padding-top: 6px;
+}
+
+.side-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 38px;
+    padding: 0 12px;
+    margin: 2px 0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-2);
+    transition: background .15s, color .15s;
+}
+
+.side-item .icon {
+    width: 17px;
+    height: 17px;
+    color: var(--text-muted);
+    transition: color .15s;
+}
+
+.side-item:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.side-item.is-active {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.side-item.is-active .icon {
+    color: var(--primary);
+}
+
+.side-item.is-active::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--primary);
+}
+
+.side-foot {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.side-mask {
+    display: none;
+}
+
+/* ------------------------------------------------------------- 主内容区 -- */
+
+.app-main {
+    position: fixed;
+    top: var(--top-h);
+    left: var(--side-w);
+    right: 0;
+    bottom: 0;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+/* 通用白色面板 */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+.panel + .panel {
+    margin-top: 16px;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 54px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.panel-title .icon {
+    width: 17px;
+    height: 17px;
+    color: var(--primary);
+}
+
+.panel-title small {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.panel-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.panel-actions .btn .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.panel-body {
+    padding: 18px;
+}
+
+/* 小标签(使用日志 / 个人信息共用) */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.tag-blue   { color: #2563eb; background: #eaf2ff; border-color: #cfe0ff; }
+.tag-teal { color: #0d9488; background: #e6faf7; border-color: #b8efe6; }
+.tag-green  { color: #059669; background: #e9f9f1; border-color: #c4efd9; }
+.tag-red    { color: #dc2626; background: #fdeeee; border-color: #f8d0d0; }
+.tag-amber  { color: #b45309; background: #fff5e1; border-color: #fbe2b0; }
+.tag-gray   { color: var(--text-2); background: var(--surface-2); border-color: var(--border); }
+
+[data-theme="dark"] .tag-blue   { color: #93c5fd; background: #13233f; border-color: #1f3a66; }
+[data-theme="dark"] .tag-teal { color: #5eead4; background: #0f2a28; border-color: #1a4a45; }
+[data-theme="dark"] .tag-green  { color: #6ee7b7; background: #0e2a22; border-color: #164a3a; }
+[data-theme="dark"] .tag-red    { color: #fca5a5; background: #2a1518; border-color: #58232a; }
+[data-theme="dark"] .tag-amber  { color: #fcd34d; background: #2a2110; border-color: #57431a; }
+
+/* ------------------------------------------------------------- 响应式 -- */
+
+@media (max-width: 900px) {
+    .side-toggle {
+        display: inline-flex !important;
+    }
+
+    .app-side {
+        transform: translateX(-100%);
+        transition: transform .22s ease;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .side-open .app-side {
+        transform: none;
+    }
+
+    .side-open .side-mask {
+        display: block;
+        position: fixed;
+        inset: var(--top-h) 0 0 0;
+        z-index: 24;
+        background: rgba(16, 24, 40, .35);
+    }
+
+    .app-main {
+        left: 0;
+        padding: 10px;
+    }
+
+    .user-name {
+        display: none;
+    }
+
+    /* 窄屏只留图标,避免顶栏被文字撑开 */
+    .top-link span {
+        display: none;
+    }
+
+    .top-link {
+        width: 34px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .user-chip {
+        padding: 3px;
+    }
+}

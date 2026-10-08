@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>管理后台 · AI 知识库助手</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute('data-theme',
+                    localStorage.getItem('airag_theme') === 'dark' ? 'dark' : 'light');
+            } catch (e) { /* 隐私模式 */ }
+        })();
+    </script>
+    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    <link rel="stylesheet" href="/assets/console.css">
+    <link rel="stylesheet" href="/assets/admin.css">
+</head>
+<body class="console" data-page="admin">
+<header id="app-top"></header>
+<aside id="app-side"></aside>
+<script src="/assets/layout.js"></script>
+
+<main class="app-main">
+    <!-- 权限校验中 -->
+    <section class="panel">
+        <div class="panel-body">
+            <p class="admin-loading" id="admin-loading">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh-cw"></use></svg>
+                <span>正在校验管理员权限…</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- 非管理员(403 / code 40303):只显示提示,JS 会把人送回问答页 -->
+    <section class="panel denied" id="admin-denied" hidden>
+        <div class="denied-mark">
+            <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+        </div>
+        <h1 class="denied-title">没有管理后台权限</h1>
+        <p class="denied-desc" id="denied-desc">
+            当前账号不是管理员,无法查看管理后台。正在返回问答页…
+        </p>
+        <div class="denied-actions">
+            <a class="btn btn-primary btn-sm" href="/faq.html">
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg>返回问答页
+            </a>
+            <a class="btn btn-ghost btn-sm" href="/logs.html">
+                <svg class="icon" aria-hidden="true"><use href="#i-scroll-text"></use></svg>我的使用记录
+            </a>
+        </div>
+    </section>
+
+    <div id="admin-body" hidden>
+        <!-- ==================================================== 概览卡片 -->
+        <section class="ov-grid" id="ov-grid" aria-live="polite">
+            <div class="ov-card" id="ov-users">
+                <div class="ov-label">
+                    <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>用户总数
+                </div>
+                <div class="ov-value" id="ov-user-count">—</div>
+                <div class="ov-sub" id="ov-user-sub">加载中…</div>
+            </div>
+            <div class="ov-card is-teal" id="ov-admins">
+                <div class="ov-label">
+                    <svg class="icon" aria-hidden="true"><use href="#i-shield-check"></use></svg>管理员
+                </div>
+                <div class="ov-value" id="ov-admin-count">—</div>
+                <div class="ov-sub" id="ov-admin-sub">加载中…</div>
+            </div>
+            <div class="ov-card is-red" id="ov-disabled">
+                <div class="ov-label">
+                    <svg class="icon" aria-hidden="true"><use href="#i-ban"></use></svg>已禁用
+                </div>
+                <div class="ov-value" id="ov-disabled-count">—</div>
+                <div class="ov-sub" id="ov-disabled-sub">加载中…</div>
+            </div>
+            <div class="ov-card is-green" id="ov-today">
+                <div class="ov-label">
+                    <svg class="icon" aria-hidden="true"><use href="#i-calendar-clock"></use></svg>今日调用
+                </div>
+                <div class="ov-value" id="ov-today-count">—<small>次</small></div>
+                <div class="ov-sub" id="ov-today-sub">加载中…</div>
+            </div>
+            <div class="ov-card is-amber" id="ov-all">
+                <div class="ov-label">
+                    <svg class="icon" aria-hidden="true"><use href="#i-chart-column"></use></svg>累计调用
+                </div>
+                <div class="ov-value" id="ov-all-count">—<small>次</small></div>
+                <div class="ov-sub" id="ov-all-sub">加载中…</div>
+            </div>
+        </section>
+
+        <!-- ======================================================= 主面板 -->
+        <section class="panel">
+            <div class="panel-head">
+                <div class="tabs" role="tablist" aria-label="管理后台分区">
+                    <button class="tab is-active" id="tab-users" type="button" role="tab"
+                            aria-selected="true" aria-controls="pane-users" data-tab="users">
+                        <svg class="icon" aria-hidden="true"><use href="#i-users"></use></svg>用户管理
+                    </button>
+                    <button class="tab" id="tab-logs" type="button" role="tab"
+                            aria-selected="false" aria-controls="pane-logs" data-tab="logs">
+                        <svg class="icon" aria-hidden="true"><use href="#i-scroll-text"></use></svg>全站记录
+                    </button>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn btn-primary btn-sm" id="btn-new-user" type="button">
+                        <svg class="icon" aria-hidden="true"><use href="#i-user-plus"></use></svg>新建用户
+                    </button>
+                    <button class="btn btn-ghost btn-sm" id="btn-refresh" type="button">
+                        <svg class="icon" aria-hidden="true"><use href="#i-refresh-cw"></use></svg>刷新
+                    </button>
+                </div>
+            </div>
+
+            <!-- ------------------------------------------------ 用户管理 -->
+            <div class="tab-pane" id="pane-users" role="tabpanel" aria-labelledby="tab-users">
+                <form class="filters" id="user-filters" autocomplete="off">
+                    <label class="f-item f-search">
+                        <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                        <input type="search" id="u-keyword" placeholder="搜索账号或昵称" maxlength="50">
+                    </label>
+                    <select class="f-item f-select" id="u-role" aria-label="角色筛选">
+                        <option value="">全部角色</option>
+                        <option value="ADMIN">管理员</option>
+                        <option value="USER">普通用户</option>
+                    </select>
+                    <div class="f-actions">
+                        <button class="btn btn-primary btn-sm" type="submit">
+                            <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>查询
+                        </button>
+                        <button class="btn btn-ghost btn-sm" type="button" id="u-reset">
+                            <svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"></use></svg>重置
+                        </button>
+                    </div>
+                </form>
+
+                <div class="table-wrap">
+                    <table class="log-table admin-table">
+                        <thead>
+                        <tr>
+                            <th class="c-id">ID</th>
+                            <th class="c-user">账号</th>
+                            <th class="c-nick">昵称</th>
+                            <th class="c-role">角色</th>
+                            <th class="c-state">状态</th>
+                            <th class="c-today">今日用量</th>
+                            <th class="c-daily">每日上限</th>
+                            <th class="c-login">最后登录</th>
+                            <th class="c-ops">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody id="user-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="pager" id="user-pager"></div>
+            </div>
+
+            <!-- ------------------------------------------------ 全站记录 -->
+            <div class="tab-pane" id="pane-logs" role="tabpanel" aria-labelledby="tab-logs" hidden>
+                <form class="filters" id="log-filters" autocomplete="off">
+                    <select class="f-item f-select" id="l-user" aria-label="用户筛选">
+                        <option value="">全部用户</option>
+                    </select>
+                    <label class="f-item f-range">
+                        <input type="datetime-local" id="l-start" step="1" aria-label="开始时间">
+                        <span class="f-sep">~</span>
+                        <input type="datetime-local" id="l-end" step="1" aria-label="结束时间">
+                    </label>
+                    <label class="f-item f-search">
+                        <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                        <input type="search" id="l-keyword" placeholder="搜索问题或回答" maxlength="100">
+                    </label>
+                    <select class="f-item f-select" id="l-type" aria-label="链路筛选">
+                        <option value="">全部链路</option>
+                        <option value="faq">AI 知识问答</option>
+                        <option value="after-sale">售后知识问答</option>
+                    </select>
+                    <select class="f-item f-select" id="l-status" aria-label="状态筛选">
+                        <option value="">全部状态</option>
+                        <option value="SUCCESS">成功</option>
+                        <option value="FAILED">失败</option>
+                        <option value="REJECTED">已拦截</option>
+                    </select>
+                    <div class="f-actions">
+                        <button class="btn btn-primary btn-sm" type="submit">
+                            <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>查询
+                        </button>
+                        <button class="btn btn-ghost btn-sm" type="button" id="l-reset">
+                            <svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"></use></svg>重置
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 账号列来自记录表里冗余存的 username 字段,看全站记录时能直接看出是谁问的;
+                     要看某个人的记录,用上面的"用户"下拉筛选。 -->
+                <div class="hint-bar" id="log-hint" hidden>
+                    <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
+                    <span id="log-hint-text"></span>
+                </div>
+
+                <div class="summary" id="log-summary" aria-live="polite"></div>
+
+                <div class="table-wrap">
+                    <table class="log-table">
+                        <thead>
+                        <tr>
+                            <th class="c-time">时间</th>
+                            <th class="c-account">账号</th>
+                            <th class="c-type">链路</th>
+                            <th class="c-status">状态</th>
+                            <th class="c-dur">耗时</th>
+                            <th class="c-q">问题</th>
+                        </tr>
+                        </thead>
+                        <tbody id="log-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="pager" id="log-pager"></div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<!-- ============================================================== 弹窗 -->
+<div class="modal-mask" id="modal-mask" hidden></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-card" id="modal-card">
+        <div class="modal-head" id="modal-head">
+            <svg class="icon" id="modal-icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+            <span class="modal-title" id="modal-title">标题</span>
+            <button class="icon-btn" id="modal-close" type="button" title="关闭" aria-label="关闭">
+                <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+            </button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-foot" id="modal-foot"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/vendor/marked.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/assets/theme.js"></script>
+<script src="/assets/admin.js"></script>
+</body>
+</html>

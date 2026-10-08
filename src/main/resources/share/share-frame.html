@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>__TITLE__</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+
+    <!-- 首帧定好主题,避免深色模式闪白 -->
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('airag_theme');
+                if (theme !== 'light' && theme !== 'dark') {
+                    theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+
+    <link rel="stylesheet" href="/assets/app.css">
+    <style>
+        html, body { height: 100%; }
+        body { overflow: hidden; }
+
+        .share-body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        /* 顶部细条:让用户明确感觉到"还在我们自己的系统里" */
+        .share-bar {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            height: 46px;
+            padding: 0 14px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .share-bar-left,
+        .share-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+        }
+
+        .share-brand-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+        }
+
+        .share-brand-mark .brand-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+        .share-brand-mark .icon { width: 15px; height: 15px; }
+
+        .share-name {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .share-user {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .share-bar-right .icon { width: 14px; height: 14px; }
+
+        /* 内嵌区域 */
+        .share-frame-wrap {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 0;
+            background: var(--surface-2);
+        }
+
+        .share-frame {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* 目标页拒绝被嵌入时的替代内容 */
+        .share-fallback {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 36px 24px;
+            text-align: center;
+        }
+
+        .share-fallback > .icon {
+            width: 34px;
+            height: 34px;
+            color: var(--warn);
+        }
+
+        .share-fallback h2 {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .share-fallback p {
+            font-size: 13px;
+            line-height: 1.75;
+            color: var(--text-muted);
+            max-width: 480px;
+        }
+
+        @media (max-width: 640px) {
+            .share-user { display: none; }
+        }
+    </style>
+</head>
+<body class="share-body">
+
+<!-- 图标:Lucide(ISC License),内联 sprite -->
+<svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-sparkles" viewBox="0 0 24 24">
+        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+        <path d="M20 2v4"/>
+        <path d="M22 4h-4"/>
+        <circle cx="4" cy="20" r="2"/>
+    </symbol>
+    <symbol id="i-circle-alert" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" x2="12" y1="8" y2="12"/>
+        <line x1="12" x2="12.01" y1="16" y2="16"/>
+    </symbol>
+    <symbol id="i-external-link" viewBox="0 0 24 24">
+        <path d="M15 3h6v6"/>
+        <path d="M10 14 21 3"/>
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+    </symbol>
+    <symbol id="i-log-out" viewBox="0 0 24 24">
+        <path d="m16 17 5-5-5-5"/>
+        <path d="M21 12H9"/>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2"/>
+        <path d="M12 20v2"/>
+        <path d="m4.93 4.93 1.41 1.41"/>
+        <path d="m17.66 17.66 1.41 1.41"/>
+        <path d="M2 12h2"/>
+        <path d="M20 12h2"/>
+        <path d="m6.34 17.66-1.41 1.41"/>
+        <path d="m19.07 4.93-1.41 1.41"/>
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>
+    </symbol>
+</svg>
+
+<header class="share-bar">
+    <div class="share-bar-left">
+        <span class="share-brand-mark"><img class="brand-logo" src="/assets/logo.png" srcset="/assets/logo.png 1x, /assets/logo@2x.png 2x" alt="logo"></span>
+        <span class="share-name">__TITLE__</span>
+        <span class="share-user" id="share-user"></span>
+    </div>
+
+    <div class="share-bar-right">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换主题" title="切换主题">
+            <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"></use></svg>
+            <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"></use></svg>
+        </button>
+        <button class="btn btn-ghost btn-sm" id="logout-button" type="button">
+            <svg class="icon" aria-hidden="true"><use href="#i-log-out"></use></svg>
+            退出登录
+        </button>
+    </div>
+</header>
+
+<div class="share-frame-wrap">
+    <iframe id="share-frame" class="share-frame" src="__TARGET_URL__" title="__TITLE__"
+            allow="clipboard-write; microphone; fullscreen" __FRAME_HIDDEN__></iframe>
+
+    <div class="share-fallback" __FALLBACK_HIDDEN__>
+        <svg class="icon" aria-hidden="true"><use href="#i-circle-alert"></use></svg>
+        <h2>这个页面无法内嵌显示</h2>
+        <p>__REASON__</p>
+        <p>
+            让运维把 FastGPT 放到反向代理后面(见 README「地址栏伪装」一节),
+            用你们自己的域名对外,就既没有这个限制、地址栏也完全是我们自己的地址。
+        </p>
+        <a class="btn btn-primary" href="__TARGET_URL__" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-external-link"></use></svg>
+            在新标签页打开
+        </a>
+    </div>
+</div>
+
+<script src="/assets/theme.js"></script>
+<script>
+    (function () {
+        'use strict';
+
+        // 显示当前登录用户名。纯界面提示,不参与鉴权(鉴权仍在 /api/** 上)。
+        try {
+            var raw = localStorage.getItem('airag_user');
+            if (raw) {
+                var user = JSON.parse(raw);
+                var name = user.nickname || user.username || '';
+                if (name) {
+                    document.getElementById('share-user').textContent = '· ' + name;
+                }
+            }
+        } catch (e) { /* 存储不可用就忽略 */ }
+
+        document.getElementById('logout-button').addEventListener('click', function () {
+            try {
+                localStorage.removeItem('airag_token');
+                localStorage.removeItem('airag_user');
+            } catch (e) { /* 忽略 */ }
+            window.location.replace('/');
+        });
+    })();
+</script>
+</body>
+</html>

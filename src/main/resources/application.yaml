@@ -1,0 +1,215 @@
+server:
+  # 默认 8100(本机 8080 常被其他服务占用);可用 SERVER_PORT 覆盖
+  port: ${SERVER_PORT:8100}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: AI-rag
+
+  datasource:
+    # createDatabaseIfNotExist=true 让首次启动自动建库(需要账号具备 CREATE 权限);
+    # 生产环境建议先手动建库并去掉该参数。
+    url: "${DB_URL:jdbc:mysql://202.140.142.70:3306/ragsearch?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}"
+    username: "${DB_USERNAME:RagSearch}"
+    password: "${DB_PASSWORD:N7jACrMLR82NXXKj}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: AiRagHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  sql:
+    init:
+      # always + CREATE TABLE IF NOT EXISTS => 每次启动幂等建表
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
+      encoding: UTF-8
+
+# ============================================================================
+# 业务配置：所有"次数 / 额度 / 限流"参数都集中在这里，后续直接改这里即可
+# ============================================================================
+app:
+
+  # --------------------------------------------------------------------------
+  # 登录 / 令牌
+  # --------------------------------------------------------------------------
+  auth:
+    # 生产环境务必替换成随机长字符串(>= 32 字节),可用环境变量注入
+    jwt-secret: "${JWT_SECRET:ai-rag-search-please-change-this-secret-to-a-long-random-string-2024}"
+    # 令牌有效期(分钟),默认 12 小时
+    token-ttl-minutes: 720
+    # 登录成功后前端跳转的地址。
+    # 默认落到我们自己的「AI 知识问答」页 /faq.html,右上角可切到 /after-sale.html。
+    # 这两个页面都在本服务内,问答请求走 /api/chat/{渠道},不直连 FastGPT,
+    # 所以额度、每日上限、内容与用量记录全部生效 —— 这也是当前的主线入口。
+    # 环境变量留空时,后端回落到同一个地址(见 AuthController#resolveRedirectUrl)。
+    redirect-url: "${LOGIN_REDIRECT_URL:/faq.html}"
+    # 首次启动时自动创建一个默认管理员,方便立刻联调;正式上线请置为 false
+    default-admin:
+      enabled: true
+      username: admin
+      password: admin123
+
+  # --------------------------------------------------------------------------
+  # 额度(次数)控制 —— 网关层拦截,按"用户维度"计数
+  # --------------------------------------------------------------------------
+  quota:
+    enabled: true
+    # 新用户默认总额度,-1 表示不限制。
+    # ★ 默认已设为 -1:现在只用"每日上限"控量,总额度不再参与拦截。
+    #   想让某个账号有终身总次数上限,去 /admin.html 单独给它设一个正数即可。
+    default-total: ${QUOTA_DEFAULT_TOTAL:-1}
+    # 扣减模式:
+    #   REQUEST = 一次提问扣 1 次(支持流式返回,推荐)
+    #   TOKEN   = 按 token 消耗扣减(需关闭流式才能拿到准确 usage)
+    deduct-mode: REQUEST
+    # TOKEN 模式下多少个 token 折算 1 次额度
+    tokens-per-unit: 1000
+    # 调用上游失败时是否退还已扣次数
+    refund-on-failure: true
+    # 每日提问上限(自然日 00:00 重置,默认按北京时间),-1 = 不限制。
+    # 只统计成功的提问;被拦截/上游失败的不占名额。次数后续直接改这里。
+    daily-limit:
+      # 「每账号每日总量」:两条链路合计的上限。
+      # ★ 默认 -1(不限) —— 总量只是两条链路相加的统计数字,不单独限流。
+      #   要限流看下面的 faq / after-sale:每条链路各自 20 次,合起来最多 40 次。
+      #   如果确实想给"两条链路合计"再压一个上限,把这里改成正数,
+      #   或者在 /admin.html 里给某个账号单独设(那个优先级更高)。
+      per-user: ${DAILY_LIMIT_PER_USER:-1}
+      # ★ 主限制:每条链路各自的每人每日上限。-1 = 不限。
+      faq: ${DAILY_LIMIT_FAQ:20}                 # 平台 FAQ -> ai_question_record
+      after-sale: ${DAILY_LIMIT_AFTER_SALE:20}   # 售后     -> after_sale_question_record
+      # "自然日"按哪个时区算。必须显式写死,不能靠 JVM 默认时区 ——
+      # 服务器跑在 UTC 时,默认时区会让重置时刻变成北京时间早上 8 点。
+      zone: ${DAILY_LIMIT_ZONE:Asia/Shanghai}
+
+  # --------------------------------------------------------------------------
+  # 频率限制(防刷):滑动窗口,按"用户"或"IP"计数
+  # --------------------------------------------------------------------------
+  rate-limit:
+    enabled: true
+    # 默认窗口大小(秒)
+    window-seconds: 60
+    # 默认窗口内最大请求数,0 或负数表示不限制
+    default-limit: 60
+    # 过期窗口清理间隔(毫秒)
+    cleanup-interval-ms: 300000
+    # 按接口覆盖上面的默认值
+    rules:
+      - path: /api/chat/**
+        limit: 10
+      - path: /api/auth/login
+        limit: 20
+      # 自助改密码:也要核对原密码,所以和登录一样是"猜密码"的入口,给个更紧的限制
+      - path: /api/auth/password
+        limit: 10
+
+  # --------------------------------------------------------------------------
+  # FastGPT 网关:两个独立应用(平台 FAQ / 售后知识库)
+  #
+  # ⚠️ api-key 没填(或配置没生效)时,/faq.html 会直接报 503 并说明缺的是哪一项 ——
+  #    这里<b>不会</b>再返回任何模拟内容。以前那个"未配置就走本地演示模式"的降级分支
+  #    已经删掉:它让配置没生效看起来像"一切正常",极难排查。
+  #
+  # 每个应用要填三样:
+  #   api-url  FastGPT 的对话接口。默认已指向 202.140.142.70:4000。
+  #   api-key  FastGPT → 账号 → API 密钥,或 应用 → 发布渠道 → API 访问。
+  #   app-id   打开应用详情页,浏览器地址栏里的 appId。
+  #            ⚠️ 用"该应用自己的 API 密钥"时可以留空(留空则请求体里不带 appId);
+  #               用"账号级 API 密钥"时必须填。
+  #
+  # 启动日志里有一段「AI-Rag 启动自检」,会打印每个应用实际生效的 api-url / appId /
+  # apiKey 前缀,以及相关环境变量。改完配置先看它,能省掉大量猜测。
+  # --------------------------------------------------------------------------
+  gateway:
+    enabled: true
+    connect-timeout-seconds: 10
+    # 注意:该超时覆盖"建立连接 + 收到响应头",不限制流式输出的总时长
+    read-timeout-seconds: 180
+    faq:
+      api-url: "${FASTGPT_FAQ_URL:http://202.140.142.70:4000/api/v1/chat/completions}"
+      # ⚠️ 真实密钥写在这里=进了代码库。正式环境请改用环境变量 FASTGPT_FAQ_KEY,并把下面这行清空。
+      api-key: "${FASTGPT_FAQ_KEY:fastgpt-dy18BiOOaGK9LOLi2AwTB7vlmNfSF7PVzjALqioFcQUDzYs38Ss0TaRR20TqFo}"
+      app-id: "${FASTGPT_FAQ_APP_ID:6abb849e2ca1a98561154e32}"
+    after-sale:
+      api-url: "${FASTGPT_AFTER_SALE_URL:http://202.140.142.70:4000/api/v1/chat/completions}"
+      api-key: "${FASTGPT_AFTER_SALE_KEY:}"
+      app-id: "${FASTGPT_AFTER_SALE_APP_ID:}"
+
+  # --------------------------------------------------------------------------
+  # 地址栏伪装:内嵌 FastGPT 分享页的包装页(备用入口,已不是登录后的落地页)
+  #
+  # ⚠️ 当前主线入口是我们自己的 /faq.html 与 /after-sale.html(问答走 /api/chat/*,
+  #    配额与记账天然生效)。下面这套是"直接给用户看 FastGPT 原版界面"的备选方案,
+  #    需要时才启用,不影响上面两个页面。
+  #
+  # 同一个 /chat/share 在两种部署下都成立,所以装不装 Nginx 都不用改这里:
+  #   * 没装 Nginx:请求打到本服务,返回我们自己写的包装页 —— 用 iframe 内嵌
+  #     FastGPT 分享页,顶部保留我们自己的工具栏。地址栏是我们的,但对话请求
+  #     由浏览器直连 FastGPT,配额与记账不生效。
+  #   * 装了 Nginx(deploy/nginx-airag.conf):Nginx 把 /chat/share 路由给
+  #     FastGPT,本服务的包装页被遮蔽 —— 此时是 FastGPT 原版分享页,而对话请求
+  #     经过 Nginx 转到本服务,配额、每日上限、记账全部生效。
+  # 详见 README「反代部署」一节。
+  # --------------------------------------------------------------------------
+  share:
+    enabled: true
+    # FastGPT 分享页的真实地址 —— 只写在服务端,不会出现在浏览器地址栏。
+    # (仅"没装 Nginx"的模式会用到它)
+    target-url: "${FASTGPT_SHARE_URL:http://202.140.142.70:4000/chat/share?shareId=vsQOZLMm2ArFrj0xY9hJ7KwP}"
+    # 对外暴露的本地路径,也就是登录成功后实际跳转的地址
+    page-path: /chat/share
+    title: AI 知识库助手
+    # 首次打开该页面时探测一次目标页的 X-Frame-Options / CSP(结果缓存 5 分钟)。
+    # FastGPT 若禁止被嵌入,页面会给出明确提示而不是白屏;内网离线环境可置为 false。
+    probe-frame-options: true
+
+  # --------------------------------------------------------------------------
+  # 分享页反代拦截:让"跳 FastGPT 原版页面"与"按账号限流 + 记账"同时成立
+  #
+  # 这是本方案的核心。FastGPT 分享页本身由浏览器直连 FastGPT,我们的网关看不见,
+  # 所以无法限流也无法记账;Nginx 把 FastGPT 整个源站搬到我们自己的地址后面、
+  # 并把对话路径路由到本服务之后,对话请求就落在"必经之路"上了。
+  #
+  # 前提:必须配合 deploy/nginx-airag.conf 使用。没装 Nginx 时保持 enabled=false。
+  # --------------------------------------------------------------------------
+  share-proxy:
+    # 装了 Nginx 并把对话路径路由过来之后,把这个改成 true
+    enabled: ${SHARE_PROXY_ENABLED:false}
+    # FastGPT 源站地址(用于透传,末尾不要带斜杠)
+    upstream-base: "${FASTGPT_BASE_URL:http://202.140.142.70:4000}"
+    connect-timeout-seconds: 10
+    # 这里是"建立连接 + 收到响应头"的超时,不限制流式输出的总时长
+    read-timeout-seconds: 300
+    # 单个请求体上限(字节),超过直接 413
+    max-request-bytes: 1048576
+    # 这些请求归到哪条链路,决定写哪张内容表和 usage_log.channel(faq / after-sale)
+    channel: faq
+    # 是否顺带把问答内容写进内容表。
+    # ⚠️ 注意:每日上限的计数来源就是内容表里当天 SUCCESS 的行数,
+    #    所以把它设为 false 会让"每日上限"永远不触发。要限流就别关。
+    store-content: true
+    # 是否给请求体里的 chatId 加账号前缀(u<用户ID>-<链路>-)。
+    # 开启后每个账号在 FastGPT 侧拥有独立会话,同一浏览器换账号登录也读不到
+    # 上一个人的上下文。关闭则原样透传(有跨账号串上下文的风险)。
+    namespace-chat-id: true
+
+  # --------------------------------------------------------------------------
+  # 跨域:内置页面与后端同源,此处仅为将来独立前端/分享页联调预留
+  # --------------------------------------------------------------------------
+  cors:
+    # 多个用英文逗号分隔;生产环境请收敛为具体域名
+    allowed-origins: "*"
+
+logging:
+  level:
+    root: INFO
+    com.example.airag: DEBUG

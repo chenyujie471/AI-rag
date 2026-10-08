@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>售后知识问答 · AI 知识库助手</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute('data-theme',
+                    localStorage.getItem('airag_theme') === 'dark' ? 'dark' : 'light');
+            } catch (e) { /* 隐私模式 */ }
+        })();
+    </script>
+    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    <link rel="stylesheet" href="/assets/chat.css">
+</head>
+<body class="console" data-page="after-sale">
+<header id="app-top"></header>
+<aside id="app-side"></aside>
+<script src="/assets/layout.js"></script>
+
+<main class="app-main">
+    <section class="panel chat-panel">
+        <div class="panel-head">
+            <div class="panel-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-life-buoy"></use></svg>
+                <span>售后知识问答</span>
+                <small>售后知识库</small>
+            </div>
+            <div class="panel-actions">
+                <span class="pill pill-daily" id="daily-badge" hidden></span>
+                <button class="btn btn-ghost btn-sm" id="new-chat-button" type="button">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>新对话
+                </button>
+                <button class="btn btn-ghost btn-sm" id="history-toggle" type="button">
+                    <svg class="icon" aria-hidden="true"><use href="#i-history"></use></svg>最近提问
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-scroll" id="messages" aria-live="polite"></div>
+
+        <div class="composer-dock">
+            <form class="composer" id="composer">
+                <textarea id="question" rows="1" placeholder="描述你遇到的售后问题…" autocomplete="off"></textarea>
+                <button class="send-button" id="send-button" type="submit" aria-label="发送">
+                    <svg class="icon" aria-hidden="true"><use href="#i-send"></use></svg>
+                </button>
+            </form>
+            <p class="composer-tip">回答由 AI 生成,请自行核查。Enter 发送,Shift + Enter 换行</p>
+        </div>
+    </section>
+</main>
+
+<aside class="drawer" id="history-panel" aria-label="最近提问" hidden>
+    <div class="drawer-head">
+        <div>
+            <strong>最近提问</strong>
+            <span class="drawer-user">点击可重新填入输入框 · <a href="/logs.html?type=after-sale">查看完整日志</a></span>
+        </div>
+        <div class="drawer-head-actions">
+            <button class="btn btn-ghost btn-sm" id="history-refresh" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh-cw"></use></svg>刷新
+            </button>
+            <button class="icon-btn" id="history-close" type="button" title="关闭" aria-label="关闭">
+                <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+            </button>
+        </div>
+    </div>
+    <div class="drawer-body" id="history-list"></div>
+</aside>
+<div class="drawer-mask" id="history-mask" hidden></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+    // 这一页的身份:链路 / 标题 / 说明 / 猜你想问(想改欢迎语就改这里)
+    window.AIRAG_PAGE = {
+        channel: 'after-sale',
+        icon: 'life-buoy',
+        label: '售后知识问答',
+        desc: '基于售后知识库回答退换货、保修、发票等售后问题。',
+        samples: [
+            '怎么申请售后?',
+            '保修期是多久?',
+            '发票怎么开?',
+            '退换货的流程是什么?'
+        ]
+    };
+</script>
+<script src="/vendor/marked.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/assets/theme.js"></script>
+<script src="/assets/chat.js"></script>
+</body>
+</html>

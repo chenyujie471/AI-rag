@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>个人信息 · AI 知识库助手</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute('data-theme',
+                    localStorage.getItem('airag_theme') === 'dark' ? 'dark' : 'light');
+            } catch (e) { /* 隐私模式 */ }
+        })();
+    </script>
+    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    <link rel="stylesheet" href="/assets/console.css">
+</head>
+<body class="console" data-page="profile">
+<header id="app-top"></header>
+<aside id="app-side"></aside>
+<script src="/assets/layout.js"></script>
+
+<main class="app-main">
+    <!-- 账号卡 -->
+    <section class="panel profile-hero">
+        <div class="hero-avatar" id="p-avatar">?</div>
+        <div class="hero-main">
+            <div class="hero-name"><span id="p-nickname">—</span><span class="tag tag-green" id="p-status">正常</span></div>
+            <div class="hero-sub">账号 <b id="p-username">—</b><span class="dot">·</span>账号 ID <b class="mono" id="p-id">—</b></div>
+        </div>
+        <div class="hero-actions">
+            <button class="btn btn-ghost btn-sm" id="p-refresh" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-refresh-cw"></use></svg>刷新
+            </button>
+        </div>
+    </section>
+
+    <!-- 今日用量:终身额度(quota_total)已退役不展示,这里只讲「今日」(北京时间 0 点重置) -->
+    <section class="panel">
+        <div class="panel-head">
+            <div class="panel-title">
+                <svg class="icon" aria-hidden="true"><use href="#i-gauge"></use></svg>
+                <span>今日用量</span>
+            </div>
+        </div>
+        <div class="panel-body quota-grid">
+            <div class="quota-main">
+                <div class="ring" id="q-ring" style="--p:0">
+                    <div class="ring-inner">
+                        <!-- 总量默认没有上限(它只是两条链路相加的统计),所以环心报的是"今天一共问了多少次" -->
+                        <strong id="q-used">—</strong>
+                        <span>今日已用</span>
+                    </div>
+                </div>
+                <dl class="quota-kv">
+                    <div><dt>每日总量</dt><dd id="q-limit">—</dd></div>
+                    <div><dt>今日剩余</dt><dd id="q-left">—</dd></div>
+                </dl>
+            </div>
+            <div class="daily-list" id="daily-list"></div>
+        </div>
+    </section>
+
+    <!-- 调用统计 + 账号信息 -->
+    <div class="two-col">
+        <section class="panel">
+            <div class="panel-head">
+                <div class="panel-title">
+                    <svg class="icon" aria-hidden="true"><use href="#i-chart-column"></use></svg>
+                    <span>累计调用统计</span>
+                </div>
+            </div>
+            <div class="panel-body" id="stats-body"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">
+                <div class="panel-title">
+                    <svg class="icon" aria-hidden="true"><use href="#i-id-card"></use></svg>
+                    <span>账号信息</span>
+                </div>
+            </div>
+            <div class="panel-body">
+                <dl class="info-list">
+                    <div><dt>账号 ID</dt><dd class="mono" id="i-id">—</dd></div>
+                    <div><dt>登录账号</dt><dd id="i-username">—</dd></div>
+                    <div><dt>昵称</dt><dd id="i-nickname">—</dd></div>
+                    <div><dt>账号状态</dt><dd id="i-status">—</dd></div>
+                    <div><dt>注册时间</dt><dd id="i-created">—</dd></div>
+                    <div><dt>最近登录</dt><dd id="i-login">—</dd></div>
+                </dl>
+                <p class="info-tip">需要增加额度或修改密码,请联系管理员。</p>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/assets/theme.js"></script>
+<script src="/assets/profile.js"></script>
+</body>
+</html>
