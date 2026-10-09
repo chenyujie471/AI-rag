@@ -141,8 +141,9 @@ app:
       app-id: "${FASTGPT_FAQ_APP_ID:6abb849e2ca1a98561154e32}"
     after-sale:
       api-url: "${FASTGPT_AFTER_SALE_URL:http://202.140.142.70:4000/api/v1/chat/completions}"
-      api-key: "${FASTGPT_AFTER_SALE_KEY:}"
-      app-id: "${FASTGPT_AFTER_SALE_APP_ID:}"
+      # ⚠️ 同上:真实密钥进代码库了,正式环境改用 FASTGPT_AFTER_SALE_KEY 并把默认值清空
+      api-key: "${FASTGPT_AFTER_SALE_KEY:fastgpt-dy18BiOOaGK9LOLi2AwTB7vlmNfSF7PVzjALqioFcQUDzYs38Ss0TaRR20TqFo}"
+      app-id: "${FASTGPT_AFTER_SALE_APP_ID:6abb93762ca1a9856115599c}"
 
   # --------------------------------------------------------------------------
   # 地址栏伪装:内嵌 FastGPT 分享页的包装页(备用入口,已不是登录后的落地页)
