@@ -135,7 +135,7 @@ app:
 
 | | 说明 |
 | --- | --- |
-| ✅ 地址栏 | 始终是我们的地址,看不到 `202.140.142.70:4000` |
+| ✅ 地址栏 | 始终是我们的地址,看不到 FastGPT 源站的真实地址 |
 | ✅ 分享链接 | 不在任何对外 URL 里,只写在服务端配置和 iframe 的 `src` 中 |
 | ⚠️ 开发者工具 | F12 仍能看到 iframe 的真实 `src` |
 | ❌ 额度 / 记账 | 对话是浏览器**直连 FastGPT**,请求根本不经过我们 |
@@ -292,12 +292,12 @@ app:
   gateway:
     enabled: true
     faq:                           # 平台 FAQ 应用
-      api-url: "http://202.140.142.70:4000/api/v1/chat/completions"   # 默认已填好
-      api-key: "fastgpt-xxxxxxxxxxxxxxxx"                             # ← 必填
+      api-url: "http://<FastGPT 地址>:4000/api/v1/chat/completions"   # 换成你的 FastGPT 地址
+      api-key: "<你的 FastGPT API Key>"                               # ← 必填
       app-id: "你的FAQ应用ID"                                          # ← 见下方说明
     after-sale:                    # 售后知识库应用
-      api-url: "http://202.140.142.70:4000/api/v1/chat/completions"   # 默认已填好
-      api-key: "fastgpt-xxxxxxxxxxxxxxxx"                             # ← 必填
+      api-url: "http://<FastGPT 地址>:4000/api/v1/chat/completions"   # 换成你的 FastGPT 地址
+      api-key: "<你的 FastGPT API Key>"                               # ← 必填
       app-id: "你的售后应用ID"
 ```
 
@@ -311,7 +311,7 @@ app:
 
 | 配置项 | 从哪拿 |
 | --- | --- |
-| `api-url` | FastGPT 的 OpenAI 兼容接口,固定是 `<FastGPT 地址>/api/v1/chat/completions`。默认已指向 `202.140.142.70:4000` |
+| `api-url` | FastGPT 的 OpenAI 兼容接口,固定是 `<FastGPT 地址>/api/v1/chat/completions`,把 `<FastGPT 地址>` 换成你自己的 FastGPT 主机(默认端口 4000) |
 | `api-key` | FastGPT → **账号 → API 密钥**,或 **应用 → 发布渠道 → API 访问** |
 | `app-id` | 打开应用详情页,看浏览器地址栏 URL 里的 `appId` |
 
@@ -893,7 +893,7 @@ FastGPT 的分享页是它自己的前端,它在浏览器里直接请求 FastGPT
    app:
      share-proxy:
        enabled: true                                        # ← 改成 true
-       upstream-base: "http://202.140.142.70:4000"          # FastGPT 源站
+       upstream-base: "http://<FastGPT 地址>:4000"          # FastGPT 源站
        channel: faq                                         # 归到哪条链路(faq / after-sale)
    ```
 
